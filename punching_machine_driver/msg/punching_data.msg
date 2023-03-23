@@ -1,0 +1,2 @@
+bool pillowFinished
+bool pillowLoaded
