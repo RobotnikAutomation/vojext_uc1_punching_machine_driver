@@ -34,8 +34,6 @@ class punchingMachineDriver(RComponent):
 
 
     def __init__(self):
-        #self.host = "192.168.0.16"  #Is defined in the launch call
-        self.port = 502
         self.unit_id = 1
         self.timeout = 1.0
         self.modbus_in_use = False
@@ -57,6 +55,7 @@ class punchingMachineDriver(RComponent):
         """Gets params from param server"""
         RComponent.ros_read_params(self)
         self.host = rospy.get_param('~punching_ip')
+        self.port = rospy.get_param('~punching_port')
 
 
     def ros_setup(self):
@@ -178,8 +177,7 @@ class punchingMachineDriver(RComponent):
 
     def get_modbus_coil_cb(self, msg):
         response = get_modbus_coilResponse()
-        print(self.read_modbus_coil_lock(msg.address,10))
-        #response.value = self.read_modbus_coil_lock(msg.address,10)
+        response.value = self.read_modbus_coil_lock(msg.address,1)
         response.ret = True
         return response
 
@@ -187,7 +185,6 @@ class punchingMachineDriver(RComponent):
     def set_punching_state_cb(self, msg):
         response = punching_machine_dataResponse()
         response.ret = self.write_modbus_coil_lock(self.pillowLoaded, msg.value)
-        #rospy.loginfo(self.read_modbus_coil_lock(self.pillowLoaded,1))
         return response
 
 

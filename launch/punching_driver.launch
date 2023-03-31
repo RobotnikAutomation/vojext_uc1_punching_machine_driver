@@ -11,7 +11,7 @@
 	<!-- Desired robot IP -->
 	<arg name="punching_ip" default="192.168.17.195" />
 	<!-- Desired robot port -->
-	<!-- <arg name="punching_port" default = 502 /> -->
+	<arg name="punching_port" default = "502" />
 
 	<!-- Load .yaml example -->
 	<rosparam file="$(find punching_machine_driver)/config/example.yaml" command="load" />
@@ -23,7 +23,7 @@
 			<param name="desired_freq" value="$(arg desired_freq)"/>
 			<param name="example_subscriber_name" value="$(arg example_subscriber_name)"/>
 			<param name="punching_ip" value="$(arg punching_ip)"/>
-			<!-- <param name="punching_port" value="$(arg punching_port)"/> -->
+			<param name="punching_port" value="$(arg punching_port)"/>
 		</node>
 
 	<!--/group-->
