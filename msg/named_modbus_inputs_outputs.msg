@@ -1,0 +1,1 @@
+punching_machine_driver/modbus_input_output[] named_registers

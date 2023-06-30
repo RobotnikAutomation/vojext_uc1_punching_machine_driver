@@ -15,14 +15,15 @@ find_package(catkin REQUIRED COMPONENTS
 ## Generate messages in the 'msg' folder
 add_message_files(DIRECTORY msg
     FILES
-    punching_data.msg
+    named_modbus_inputs_outputs.msg
+    modbus_input_output.msg
 )
 
 ## Generate services in the 'srv' folder
 add_service_files(
     DIRECTORY srv
     FILES
-    punching_machine_data.srv
+    set_named_modbus.srv
     get_modbus_coil.srv
     set_modbus_coil.srv
 )
@@ -36,6 +37,7 @@ generate_messages(
   actionlib_msgs
   std_msgs  # Or other packages containing msgs
   geometry_msgs
+  robotnik_msgs
 )
 
 catkin_package(

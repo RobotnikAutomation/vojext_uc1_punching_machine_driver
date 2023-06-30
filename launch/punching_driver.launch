@@ -13,8 +13,6 @@
 	<!-- Desired robot port -->
 	<arg name="punching_port" default = "502" />
 
-	<!-- Load .yaml example -->
-	<rosparam file="$(find punching_machine_driver)/config/example.yaml" command="load" />
 
 	<!--group ns="$(arg id_robot)"-->
 
@@ -24,6 +22,8 @@
 			<param name="example_subscriber_name" value="$(arg example_subscriber_name)"/>
 			<param name="punching_ip" value="$(arg punching_ip)"/>
 			<param name="punching_port" value="$(arg punching_port)"/>
+			<!-- Load .yaml example -->
+			<rosparam file="$(find punching_machine_driver)/config/modbusSignalsPEMU.yaml" command="load" />
 		</node>
 
 	<!--/group-->

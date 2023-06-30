@@ -1,2 +1,0 @@
-bool pillowFinished
-bool pillowLoaded

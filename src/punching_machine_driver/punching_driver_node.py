@@ -1,8 +1,8 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
 import rospy
-from punching_driver import punchingMachineDriver
+from punching_machine_driver.punching_driver import punchingMachineDriver
 
 
 def main():

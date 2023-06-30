@@ -1,9 +1,10 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
 from ctypes import sizeof
 from time import sleep
 from rcomponent.rcomponent import *
+import yaml
 
 # Insert here general imports:
 import math
@@ -14,14 +15,16 @@ from std_msgs.msg import String
 from std_msgs.msg import Int16
 
 from robotnik_msgs.msg import StringStamped
-from punching_machine_driver.msg import punching_data
+from robotnik_msgs.msg import named_input_output
+from punching_machine_driver.msg import modbus_input_output
+from punching_machine_driver.msg import named_modbus_inputs_outputs
 
 from std_srvs.srv import Trigger, TriggerResponse
 from robotnik_msgs.srv import set_modbus_register, set_modbus_registerResponse
 from robotnik_msgs.srv import get_modbus_register, get_modbus_registerResponse
-from punching_machine_driver.srv import punching_machine_data, punching_machine_dataResponse
 from punching_machine_driver.srv import set_modbus_coil, set_modbus_coilResponse
 from punching_machine_driver.srv import get_modbus_coil, get_modbus_coilResponse
+from punching_machine_driver.srv import set_named_modbus, set_named_modbusResponse
 
 
 #Modbus
@@ -39,14 +42,6 @@ class punchingMachineDriver(RComponent):
         self.modbus_in_use = False
 
         self.lock = threading.Lock()
-
-        #Only Read address
-        self.start_reading_data = 16384
-
-
-        #Read & write address
-        self.start_rw_data = 16512
-        self.pillowLoaded = 16512
 
         RComponent.__init__(self)
 
@@ -73,17 +68,15 @@ class punchingMachineDriver(RComponent):
 
         RComponent.ros_setup(self)
 
-        # Publisher
-        self.status_pub = rospy.Publisher('~status', String, queue_size=10)
-        self.status_stamped_pub = rospy.Publisher('~status_stamped', StringStamped, queue_size=10)
         
-        self.punching_state_pub = rospy.Publisher('~punching_state', punching_data, queue_size=10)
+        self.punching_state_pub = rospy.Publisher('~punching_state', named_modbus_inputs_outputs, queue_size=10)
 
         self.set_modbus_register_service = rospy.Service('~set_modbus_register', set_modbus_register, self.set_modbus_register_cb)
         self.get_modbus_register_service = rospy.Service('~get_modbus_register', get_modbus_register, self.get_modbus_register_cb)
         self.set_modbus_coil_service = rospy.Service('~set_modbus_coil', set_modbus_coil, self.set_modbus_coil_cb)
         self.get_modbus_coil_service = rospy.Service('~get_modbus_coil', get_modbus_coil, self.get_modbus_coil_cb)
-        self.set_target_position_service = rospy.Service('~set_pillowLoaded', punching_machine_data, self.set_punching_state_cb)
+#        self.set_target_position_service = rospy.Service('~set_pillowLoaded', punching_machine_data, self.set_punching_state_cb)
+        self.set_named_modbus_signal = rospy.Service('~set_named_signal', set_named_modbus, self.set_named_modbus_signal_cb)
 
 
         return 0
@@ -91,42 +84,40 @@ class punchingMachineDriver(RComponent):
 
     def init_state(self):
         self.status = String()
+        self.yaml_registers_rs = rospy.get_param('~MODBUS_REGISTERS')
+        self.yaml_registers_cb = rospy.get_param('~MODBUS_REGISTERS')
         return RComponent.init_state(self)
 
 
     def ready_state(self):
-        """Actions performed in ready state"""
 
-        # Publish topic with status
+        punching_status = named_modbus_inputs_outputs()
+        appended_data = []
 
-        status_stamped = StringStamped()
-        status_stamped.header.stamp = rospy.Time.now()
-        status_stamped.string = self.status.data
+        if self.is_open_modbus_lock():
 
-        self.status_pub.publish(self.status)
-        self.status_stamped_pub.publish(status_stamped)
-
-        punching_status = punching_data()
-
-        if self.is_open_modbus_lock():  
-            read_column_data = self.read_modbus_coil_lock(self.start_reading_data, 1)
-            read_rw_params = self.read_modbus_coil_lock(self.start_rw_data, 1)
-
-            #Only Read column data
-            #print(read_column_data)
-            #print(read_rw_params)
-            #if(read_column_data==None or read_rw_params==None):
-            #    print("no data")
-            #else:
             try:
-                punching_status.pillowFinished = read_column_data[0]
                 
-                #Read & write address            
-                punching_status.pillowLoaded = read_rw_params[0]
-
-                self.punching_state_pub.publish(punching_status)
+                for register in self.yaml_registers_rs:
+                    if register['permission']<=1:
+                        register_status = modbus_input_output()
+                        register_status.name = register['name']
+                        if register['type'] == 0:
+                            value = self.read_modbus_coil_lock(register['register'],register['lenght'])
+                        else:
+                            value = self.read_modbus_lock(register['register'],register['lenght'])
+                        register_status.value = value
+                        appended_data.append(register_status)
+                read_result = True
             except:
-                rospy.logwarn("Missed data")
+                rospy.logerr("%s::ready_state: ERROR READING" % (self._node_name))
+                read_result = False
+            if read_result:
+                try:
+                    punching_status.named_registers = appended_data
+                    self.punching_state_pub.publish(punching_status)
+                except:
+                    rospy.logerr("%s::ready_state: ERROR PUBLISHING" % (self._node_name))
         else:
             rospy.logerr("Reconecting MODBUS")
             self.open_modbus_lock()
@@ -141,18 +132,10 @@ class punchingMachineDriver(RComponent):
 
     def shutdown(self):
         self.close_modbus_lock()
-        """Shutdowns device
-        Return:
-            0 : if it's performed successfully
-            -1: if there's any problem or the component is running
-        """
-
         return RComponent.shutdown(self)
 
 
     def switch_to_state(self, new_state):
-        """Performs the change of state"""
-
         return RComponent.switch_to_state(self, new_state)
 
 
@@ -182,17 +165,46 @@ class punchingMachineDriver(RComponent):
         return response
 
 
-    def set_punching_state_cb(self, msg):
-        response = punching_machine_dataResponse()
-        response.ret = self.write_modbus_coil_lock(self.pillowLoaded, msg.value)
+    def set_named_modbus_signal_cb(self, msg):
+        response = set_named_modbusResponse()
+        for signal in self.yaml_registers_cb:
+            if signal['name'] == msg.name:
+                if signal['permission'] >= 1:
+                    response.msg = ''
+                    if signal['type'] == 0:
+                        value_list = [True if x > 0 else False for x in msg.value]
+                        response.ret = self.write_modbus_coil_lock(signal['register'], value_list)
+                    elif signal['type'] == 1:
+                        value_list = list(map(int, msg.value))
+                        response.ret = self.write_modbus_coil_lock(signal['register'], value_list)
+                    elif signal['type'] == 2:
+                        value_list = msg.value
+                        response.ret = self.write_modbus_coil_lock(signal['register'], value_list)
+                    else:
+                        logmsg = ("%s::set_named_modbus_signal_cb: not valid type" % (self._node_name))
+                        response.msg = 'not valid type'
+                        response.ret = False
+                    return response
+                else:
+                    logmsg = ("%s::set_named_modbus_signal_cb: not write permissions" % (self._node_name))
+                    response.msg = 'not write permissions'
+                    response.ret = False
+                    return response
+            else:
+                logmsg = ("%s::set_named_modbus_signal_cb: missng signal name" % (self._node_name))
+                response.msg = 'missng signal name'
+                response.ret = False
+        rospy.logerr(logmsg)
         return response
 
 
     # Locked MODBUS functions
     def write_modbus_lock(self, address, value):
         self.lock.acquire()
-        response = self.modbus_module.write_single_register(address, value)
+        response = self.modbus_module.write_multiple_registers(address, value)
         self.lock.release()
+        if type(response) != type(True):
+            response = False
         return response
 
 
@@ -212,8 +224,10 @@ class punchingMachineDriver(RComponent):
 
     def write_modbus_coil_lock(self, address, value):
         self.lock.acquire()
-        response = self.modbus_module.write_single_coil(address, value)
+        response = self.modbus_module.write_multiple_coils(address, value)
         self.lock.release()
+        if type(response) != type(True):
+            response = False
         return response
 
 
