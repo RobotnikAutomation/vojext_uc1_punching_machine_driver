@@ -157,7 +157,7 @@ class punchingMachineDriver(RComponent):
 
     def set_modbus_coil_cb(self, msg):
         response = set_modbus_coilResponse()
-        response.success = self.write_modbus_coil_lock(msg.address, [msg.value])
+        response.ret = self.write_modbus_coil_lock(msg.address, [msg.value])
         return response
 
 
@@ -165,9 +165,9 @@ class punchingMachineDriver(RComponent):
         response = get_modbus_coilResponse()
         try:
             response.value = self.read_modbus_coil_lock(msg.address,1)[0]
-            response.success = True
+            response.ret = True
         except:
-            response.success = False
+            response.ret = False
         return response
 
 

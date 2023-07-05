@@ -13,14 +13,26 @@ test punching machine
 PLC1      IP addrress is: 192.168.17.195 (testing)
 PLC2      IP addrress is: 192.168.17.196
 
+## Launch
+By default the IP is 192.168.17.195 and takes the data from "modbusSignals.yaml"
+
+        roslaunch punching_machine_driver punching_driver.launch
+
+If we want to connect with two devices we need to launch
+
+                roslaunch punching_machine_driver two_punching_driver.launch enable_pm2:=true
+this launcher will take the registers from the "modbusSignalsPM1.yaml" and "modbusSignalsPM2.yaml"
+
+
 ### Registers
 
-        The registers are available at config/modbusSignalsPEMU.yaml
+The registers are available at config/modbusSignals.yaml
+
 
 ## Topics
 
 #### ~punching_state (punching_machine_driver/punching_data)
-        will provide a list with the name of the registers and a list with the read values
+will provide a list with the name of the registers and a list with the values
 
 
 
