@@ -119,7 +119,7 @@ class punchingMachineDriver(RComponent):
                 except:
                     rospy.logerr("%s::ready_state: ERROR PUBLISHING" % (self._node_name))
         else:
-            rospy.logerr("Reconecting MODBUS")
+            rospy.logwarn("%s::ready_state: Reconecting MODBUS" % (self._node_name))
             self.open_modbus_lock()
         
         return RComponent.ready_state(self)
