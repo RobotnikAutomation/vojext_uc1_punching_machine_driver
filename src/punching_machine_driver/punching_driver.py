@@ -75,7 +75,6 @@ class punchingMachineDriver(RComponent):
         self.get_modbus_register_service = rospy.Service('~get_modbus_register', get_modbus_register, self.get_modbus_register_cb)
         self.set_modbus_coil_service = rospy.Service('~set_modbus_coil', set_modbus_coil, self.set_modbus_coil_cb)
         self.get_modbus_coil_service = rospy.Service('~get_modbus_coil', get_modbus_coil, self.get_modbus_coil_cb)
-#        self.set_target_position_service = rospy.Service('~set_pillowLoaded', punching_machine_data, self.set_punching_state_cb)
         self.set_named_modbus_signal = rospy.Service('~set_named_signal', set_named_modbus, self.set_named_modbus_signal_cb)
 
 
@@ -141,27 +140,34 @@ class punchingMachineDriver(RComponent):
 
     def set_modbus_register_cb(self, msg):
         response = set_modbus_registerResponse()
-        response.ret = self.write_modbus_lock(msg.address, msg.value)
+        response.ret = self.write_modbus_lock(msg.address, [msg.value])
         return response
 
 
     def get_modbus_register_cb(self, msg):
         response = get_modbus_registerResponse()
-        print(self.read_modbus_lock(msg.address,1))
-        response.ret = True
+        try:
+            response.value = self.read_modbus_lock(msg.address,1)[0]
+            print(self.read_modbus_lock(msg.address,1))
+            response.ret = True
+        except:
+            response.ret = False
         return response
 
 
     def set_modbus_coil_cb(self, msg):
         response = set_modbus_coilResponse()
-        response.ret = self.write_modbus_coil_lock(msg.address, msg.value)
+        response.success = self.write_modbus_coil_lock(msg.address, [msg.value])
         return response
 
 
     def get_modbus_coil_cb(self, msg):
         response = get_modbus_coilResponse()
-        response.value = self.read_modbus_coil_lock(msg.address,1)
-        response.ret = True
+        try:
+            response.value = self.read_modbus_coil_lock(msg.address,1)[0]
+            response.success = True
+        except:
+            response.success = False
         return response
 
 

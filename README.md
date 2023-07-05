@@ -22,13 +22,32 @@ PLC2      IP addrress is: 192.168.17.196
 #### ~punching_state (punching_machine_driver/punching_data)
         will provide a list with the name of the registers and a list with the read values
 
+
+
 ## Services
 
 #### ~set_named_signal (punching_machine_driver/set_named_modbus)
+##### Example
+        rosservice call /punching_machine_driver/set_named_signal "name: 'pillowCanBeTaken'
+        value: [0]" 
+
 #### ~set_modbus_register (robotnik_msgs/set_modbus_register)
+##### Example
+        rosservice call /punching_machine_driver/set_modbus_register "address: 1    
+        value: 65535" 
+
 #### ~get_modbus_register (robotnik_msgs/get_modbus_register)
+##### Example
+        rrosservice call /punching_machine_driver/get_modbus_register "address: 1"
+ 
 #### ~set_modbus_coil (punching_machine_driver/set_modbus_coil)
+##### Example
+        rosservice call /punching_machine_driver/set_modbus_coil "address: 16384
+        value: false" 
+
 #### ~get_modbus_coil (punching_machine_driver/get_modbus_coil)
+##### Example
+        rosservice call /punching_machine_driver/get_modbus_coil "address: 16389"
 
 ## msg
 
