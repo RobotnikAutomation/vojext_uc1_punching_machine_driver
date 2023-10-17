@@ -25,6 +25,7 @@ from robotnik_msgs.srv import get_modbus_register, get_modbus_registerResponse
 from punching_machine_driver.srv import set_modbus_coil, set_modbus_coilResponse
 from punching_machine_driver.srv import get_modbus_coil, get_modbus_coilResponse
 from punching_machine_driver.srv import set_named_modbus, set_named_modbusResponse
+from punching_machine_driver.srv import get_named_modbus, get_named_modbusResponse
 
 
 #Modbus
@@ -32,7 +33,7 @@ from pyModbusTCP.client import ModbusClient
 
 class punchingMachineDriver(RComponent):
     """
-    driver for sir lif
+    driver for punching machine
     """
 
 
@@ -76,6 +77,7 @@ class punchingMachineDriver(RComponent):
         self.set_modbus_coil_service = rospy.Service('~set_modbus_coil', set_modbus_coil, self.set_modbus_coil_cb)
         self.get_modbus_coil_service = rospy.Service('~get_modbus_coil', get_modbus_coil, self.get_modbus_coil_cb)
         self.set_named_modbus_signal = rospy.Service('~set_named_signal', set_named_modbus, self.set_named_modbus_signal_cb)
+        self.punch_new_pillow = rospy.Service('~punch_new_pillow', Trigger, self.punch_new_pillow_cb)
 
 
         return 0
@@ -94,9 +96,7 @@ class punchingMachineDriver(RComponent):
         appended_data = []
 
         if self.is_open_modbus_lock():
-
             try:
-                
                 for register in self.yaml_registers_rs:
                     if register['permission']<=1:
                         register_status = modbus_input_output()
@@ -118,6 +118,7 @@ class punchingMachineDriver(RComponent):
                 except:
                     rospy.logerr("%s::ready_state: ERROR PUBLISHING" % (self._node_name))
         else:
+            self.close_modbus_lock()
             rospy.logwarn("%s::ready_state: Reconecting MODBUS" % (self._node_name))
             self.open_modbus_lock()
         
@@ -171,6 +172,26 @@ class punchingMachineDriver(RComponent):
         return response
 
 
+    def punch_new_pillow_cb(self, msg):
+        response = TriggerResponse()
+        if self.write_modbus_coil_lock(16512, [True]):
+            sleep(1.0)
+            count = 0 
+            while not self.write_modbus_coil_lock(16512, [False]) and count < 3:
+                sleep(0.5)
+                count+=1
+            if count < 3:
+                response.success = True
+            else:
+                response.success = False
+                response.message = 'punching signal error'
+        else:
+            response.success = False
+            response.message = 'punching signal error'
+
+        return response
+
+
     def set_named_modbus_signal_cb(self, msg):
         response = set_named_modbusResponse()
         for signal in self.yaml_registers_cb:
@@ -182,10 +203,7 @@ class punchingMachineDriver(RComponent):
                         response.ret = self.write_modbus_coil_lock(signal['register'], value_list)
                     elif signal['type'] == 1:
                         value_list = list(map(int, msg.value))
-                        response.ret = self.write_modbus_coil_lock(signal['register'], value_list)
-                    elif signal['type'] == 2:
-                        value_list = msg.value
-                        response.ret = self.write_modbus_coil_lock(signal['register'], value_list)
+                        response.ret = self.write_modbus_lock(signal['register'], value_list)
                     else:
                         logmsg = ("%s::set_named_modbus_signal_cb: not valid type" % (self._node_name))
                         response.msg = 'not valid type'
@@ -203,6 +221,29 @@ class punchingMachineDriver(RComponent):
         rospy.logerr(logmsg)
         return response
 
+    def get_named_modbus_signal_cb(self, msg):
+        response = get_named_modbusResponse()
+        for signal in self.yaml_registers_cb:
+            if signal['name'] == msg.name:
+                if signal['type'] == 0:
+                    value_list = [True if x > 0 else False for x in msg.value]
+                    response.value = self.read_modbus_coil_lock(signal['register'], value_list,signal['lenght'])
+                    response.ret = True
+                elif signal['type'] == 1:
+                    value_list = list(map(int, msg.value))
+                    response.value = self.read_modbus_lock(signal['register'], value_list,signal['lenght'])
+                    response.ret = True
+                else:
+                    logmsg = ("%s::get_named_modbus_signal_cb: not valid type" % (self._node_name))
+                    response.msg = 'not valid type'
+                    response.ret = False
+                return response
+            else:
+                logmsg = ("%s::set_named_modbus_signal_cb: missng signal name" % (self._node_name))
+                response.msg = 'missng signal name'
+                response.ret = False
+        rospy.logerr(logmsg)
+        return response
 
     # Locked MODBUS functions
     def write_modbus_lock(self, address, value):

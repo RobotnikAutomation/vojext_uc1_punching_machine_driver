@@ -1,69 +1,61 @@
 #name
 #register
 #lenght (number of registers)
-#type 0:=bool 1:= int
+#type 0:=bool 1:= int 2:=float
 #permission 0:=read 1:= read/write 2:=write 
 MODBUS_REGISTERS:
   - name: power
-    register: 16390
-    lenght: 1
-    type: 0
-    permission: 0
-  - name: manualMode
-    register: 16388
-    lenght: 1
-    type: 0
-    permission: 0
-  - name: fixedStroke
-    register: 16397
-    lenght: 1
-    type: 0
-    permission: 0
-  - name: pumpStart
     register: 16389
     lenght: 1
     type: 0
     permission: 0
-  - name: rightSideSensor1Light
-    register: 16393
-    lenght: 1
-    type: 0
-    permission: 0
-  - name: rightSideSensor2Light
-    register: 16394
-    lenght: 1
-    type: 0
-    permission: 0
-  - name: leftSideSensor1Light
-    register: 16395
-    lenght: 1
-    type: 0
-    permission: 0
-  - name: leftSideSensor2Light
+  - name: fixedStroke
     register: 16396
     lenght: 1
     type: 0
     permission: 0
-  - name: emergencyStop
-    register: 16392
+  - name: pumpStart
+    register: 16388
     lenght: 1
     type: 0
     permission: 0
-  - name: sliderDown
-    register: 16398
+  - name: emergencyMode
+    register: 16391
+    lenght: 1
+    type: 0
+    permission: 0
+  - name: manualMode
+    register: 16387
     lenght: 1
     type: 0
     permission: 0
   - name: pillowCanBeTaken
-    register: 16385
+    register: 16384
     lenght: 1
     type: 0
-    permission: 0
+    permission: 1
   - name: pillowInsertReady
     register: 16512
     lenght: 1
     type: 0
-    permission: 1
-
-
-
+    permission: 0
+  - name: rightSideSensor1Light
+    register: 16392
+    lenght: 1
+    type: 0
+    permission: 0
+  - name: rightSideSensor2Light
+    register: 16393
+    lenght: 1
+    type: 0
+    permission: 0
+  - name: leftSideSensor1Light
+    register: 16394
+    lenght: 1
+    type: 0
+    permission: 0
+  - name: leftSideSensor2Light
+    register: 16395
+    lenght: 1
+    type: 0
+    permission: 0

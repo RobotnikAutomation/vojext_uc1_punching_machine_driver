@@ -23,6 +23,7 @@ add_message_files(DIRECTORY msg
 add_service_files(
     DIRECTORY srv
     FILES
+    get_named_modbus.srv
     set_named_modbus.srv
     get_modbus_coil.srv
     set_modbus_coil.srv
